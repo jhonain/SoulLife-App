@@ -1,33 +1,56 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Heart, Home, Compass, User } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
+  
+  // Si insets.bottom > 0, el celular usa gestos (sin botones físicos)
+  // Si insets.bottom === 0, tiene botones físicos
+  const hasGestureNav = insets.bottom > 0;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#D4AF37',
+        tabBarInactiveTintColor: '#666666',
+        tabBarShowLabel: false,
+        tabBarStyle: {
+          backgroundColor: '#0A0A0F',
+          borderTopColor: '#1A1A2E',
+          height: hasGestureNav ? 70 + insets.bottom : 70,
+          paddingBottom: hasGestureNav ? insets.bottom : 15,
+          paddingTop: 15,
+        },
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Inicio',
+          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favoritos',
+          tabBarIcon: ({ color }) => <Heart size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Explorar',
+          tabBarIcon: ({ color }) => <Compass size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="Profile"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
     </Tabs>

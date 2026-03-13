@@ -1,0 +1,20 @@
+{
+  "frases": [
+    {
+      "id": "946d7831-d6a4-4330-acdc-8c750514c80e",
+      "autor": "Albert Schweitzer",
+      "categoria_id": 2,
+      "image_url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+      "is_active": true,
+      "created_at": "2026-03-08T22:59:12.455722+00:00"
+    }
+  ],
+  "frases_traduccion": [
+    {
+      "id": 4,
+      "frase_id": "946d7831-d6a4-4330-acdc-8c750514c80e",
+      "language": "es",
+      "contenido": "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito. Si amas lo que haces, tendrás éxito."
+    }
+  ]
+}
