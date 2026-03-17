@@ -2,10 +2,21 @@ import { supabase } from '../lib/supabase';
 import { Frase } from '../models/Frase';
 
 export const fraseService = {
-  
-  async getActiveFrases(page: number = 0, limit: number = 10): Promise<Frase[]> {
-    const from = page * limit;
-    const to = from + limit - 1;
+
+  // Trae solo los IDs de todas las frases activas (liviano)
+  async getActiveFraseIds(): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('frases')
+      .select('id')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data.map((item: any) => item.id);
+  },
+
+  // Trae frases por un array de IDs específicos (respeta el orden)
+  async getFrasesByIds(ids: string[]): Promise<Frase[]> {
+    if (ids.length === 0) return [];
 
     const { data, error } = await supabase
       .from('frases')
@@ -13,21 +24,25 @@ export const fraseService = {
         id, autor, image_url, is_active,
         frases_traduccion (contenido, language)
       `)
-      .eq('is_active', true)
-      .range(from, to);
+      .in('id', ids);
 
     if (error) throw error;
 
-    return data.map((item: any) => {
-      const traduccion =
-        item.frases_traduccion.find((t: any) => t.language === 'es') ||
-        item.frases_traduccion[0];
-      return {
-        id: item.id,
-        autor: item.autor,
-        image_url: item.image_url,
-        texto: traduccion?.contenido ?? 'Sin traducción disponible.',
-      };
-    });
+    // Respetar el orden del array de IDs que pasamos
+    const map = new Map(data.map((item: any) => [item.id, item]));
+    return ids
+      .map((id) => map.get(id))
+      .filter(Boolean)
+      .map((item: any) => {
+        const traduccion =
+          item.frases_traduccion.find((t: any) => t.language === 'es') ||
+          item.frases_traduccion[0];
+        return {
+          id: item.id,
+          autor: item.autor,
+          image_url: item.image_url,
+          texto: traduccion?.contenido ?? 'Sin traducción disponible.',
+        };
+      });
   },
 };

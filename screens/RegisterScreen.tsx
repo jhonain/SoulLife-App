@@ -12,9 +12,11 @@ import {
 import { useRouter } from 'expo-router';
 import { Heart, Eye, EyeOff } from 'lucide-react-native';
 import { useAuthViewModel } from '../viewmodels/useAuthViewModel';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const { loading, error, signUpWithEmail, signInWithGoogle, clearError, validateRegister } = useAuthViewModel();
 
   const [username, setUsername] = useState('');
@@ -24,23 +26,15 @@ export default function RegisterScreen() {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [fieldErrors, setFieldErrors] = useState({ username: '', email: '', password: '', confirmPassword: '' });
 
   const handleRegister = async () => {
     clearError();
     const { errors, hasErrors } = validateRegister(email, password, username, confirmPassword);
     setFieldErrors(errors);
     if (hasErrors) return;
-
     const result = await signUpWithEmail(email.trim(), password, username.trim());
-    if (result) {
-      setSuccess(true);
-    }
+    if (result) setSuccess(true);
   };
 
   const getPasswordStrength = (pass: string) => {
@@ -48,37 +42,25 @@ export default function RegisterScreen() {
     if (pass.length < 6) return { label: 'Muy débil', color: '#FF5050', width: '25%' };
     if (pass.length < 8) return { label: 'Débil', color: '#FF8C00', width: '50%' };
     if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(pass)) return { label: 'Fuerte', color: '#22C55E', width: '100%' };
-    return { label: 'Media', color: '#D4AF37', width: '75%' };
-  };
-
-  const handleGoogle = async () => {
-    await signInWithGoogle();
+    return { label: 'Media', color: colors.gold, width: '75%' };
   };
 
   if (success) {
     return (
-      <View className="flex-1 justify-center items-center bg-[#0A0A0F] px-8">
-        <View
-          className="w-16 h-16 rounded-full items-center justify-center mb-6"
-          style={{ backgroundColor: 'rgba(212,175,55,0.15)' }}
-        >
-          <Heart size={32} color="#D4AF37" fill="#D4AF37" strokeWidth={1.5} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, paddingHorizontal: 32 }}>
+        <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 24, backgroundColor: colors.goldBg }}>
+          <Heart size={32} color={colors.gold} fill={colors.gold} strokeWidth={1.5} />
         </View>
-        <Text className="text-white font-bold text-2xl text-center mb-3">
-          ¡Cuenta creada!
-        </Text>
-        <Text className="text-center mb-8" style={{ color: '#888', lineHeight: 22 }}>
+        <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 24, textAlign: 'center', marginBottom: 12 }}>¡Cuenta creada!</Text>
+        <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 32, lineHeight: 22 }}>
           Revisa tu correo para confirmar tu cuenta y luego inicia sesión.
         </Text>
         <TouchableOpacity
-          className="w-full py-4 rounded-xl items-center"
-          style={{ backgroundColor: '#D4AF37' }}
+          style={{ width: '100%', paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: colors.gold }}
           onPress={() => router.replace('/login' as any)}
           activeOpacity={0.8}
         >
-          <Text className="font-bold" style={{ color: '#0A0A0F', fontSize: 15 }}>
-            Ir a iniciar sesión
-          </Text>
+          <Text style={{ fontWeight: 'bold', color: '#0A0A0F', fontSize: 15 }}>Ir a iniciar sesión</Text>
         </TouchableOpacity>
       </View>
     );
@@ -86,7 +68,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-[#0A0A0F]"
+      style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -94,89 +76,78 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo / Título */}
-        <View className="items-center mb-10">
-          <View
-            className="w-16 h-16 rounded-full items-center justify-center mb-4"
-            style={{ backgroundColor: 'rgba(212,175,55,0.15)' }}
-          >
-            <Heart size={32} color="#D4AF37" strokeWidth={1.5} />
+        {/* Logo */}
+        <View style={{ alignItems: 'center', marginBottom: 40 }}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: colors.goldBg }}>
+            <Heart size={32} color={colors.gold} strokeWidth={1.5} />
           </View>
-          <Text className="text-white font-bold" style={{ fontSize: 26 }}>
-            Únete a Soul-Life
-          </Text>
-          <Text className="text-center mt-2" style={{ color: '#666', fontSize: 14 }}>
-            Guarda tus frases favoritas y mucho más
-          </Text>
+          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 26 }}>Únete a Soul-Life</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 14, marginTop: 8, textAlign: 'center' }}>Guarda tus frases favoritas y mucho más</Text>
         </View>
 
         {/* Botón Google */}
         <TouchableOpacity
-          className="w-full py-4 rounded-xl flex-row items-center justify-center mb-6"
-          style={{ backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#2A2A3E' }}
+          style={{ width: '100%', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 24, backgroundColor: colors.googleBtn, borderWidth: 1, borderColor: colors.borderStrong }}
           activeOpacity={0.8}
-          onPress={handleGoogle}
+          onPress={signInWithGoogle}
           disabled={loading}
         >
-          <Text className="text-white font-semibold text-base mr-2">G</Text>
-          <Text className="text-white font-semibold" style={{ fontSize: 15 }}>
-            Continuar con Google
-          </Text>
+          <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15, marginRight: 8 }}>G</Text>
+          <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15 }}>Continuar con Google</Text>
         </TouchableOpacity>
 
         {/* Separador */}
-        <View className="flex-row items-center mb-6">
-          <View className="flex-1 h-px" style={{ backgroundColor: '#2A2A3E' }} />
-          <Text className="mx-4" style={{ color: '#555', fontSize: 13 }}>o regístrate con email</Text>
-          <View className="flex-1 h-px" style={{ backgroundColor: '#2A2A3E' }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.borderStrong }} />
+          <Text style={{ color: colors.textMuted, fontSize: 13, marginHorizontal: 16 }}>o regístrate con email</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.borderStrong }} />
         </View>
 
         {/* Error global */}
         {error && (
-          <View className="w-full py-3 px-4 rounded-xl mb-4" style={{ backgroundColor: 'rgba(255,80,80,0.1)', borderWidth: 1, borderColor: 'rgba(255,80,80,0.3)' }}>
-            <Text style={{ color: '#FF5050', fontSize: 13 }}>{error}</Text>
+          <View style={{ paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginBottom: 16, backgroundColor: colors.dangerBg, borderWidth: 1, borderColor: colors.dangerBorder }}>
+            <Text style={{ color: colors.danger, fontSize: 13 }}>{error}</Text>
           </View>
         )}
 
-        {/* Campo Username */}
-        <Text className="text-white mb-2 ml-1" style={{ fontSize: 13 }}>Nombre de usuario</Text>
+        {/* Username */}
+        <Text style={{ color: colors.text, fontSize: 13, marginBottom: 8, marginLeft: 4 }}>Nombre de usuario</Text>
         <TextInput
-          className="w-full py-4 px-4 rounded-xl"
-          style={{ backgroundColor: '#12121A', borderWidth: 1, borderColor: fieldErrors.username ? '#FF5050' : '#2A2A3E', color: '#fff', fontSize: 15 }}
+          style={{ width: '100%', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 12, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: fieldErrors.username ? colors.danger : colors.borderStrong, color: colors.text, fontSize: 15 }}
           placeholder="Tu nombre"
-          placeholderTextColor="#444"
+          placeholderTextColor={colors.textSubtle}
           value={username}
           onChangeText={(v) => { setUsername(v); setFieldErrors(p => ({ ...p, username: '' })); }}
           autoCapitalize="words"
         />
-        {fieldErrors.username ? (
-          <Text className="mt-1 mb-3 ml-1" style={{ color: '#FF5050', fontSize: 12 }}>{fieldErrors.username}</Text>
-        ) : <View className="mb-4" />}
+        {fieldErrors.username
+          ? <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4, marginBottom: 12, marginLeft: 4 }}>{fieldErrors.username}</Text>
+          : <View style={{ marginBottom: 16 }} />
+        }
 
-        {/* Campo Email */}
-        <Text className="text-white mb-2 ml-1" style={{ fontSize: 13 }}>Correo electrónico</Text>
+        {/* Email */}
+        <Text style={{ color: colors.text, fontSize: 13, marginBottom: 8, marginLeft: 4 }}>Correo electrónico</Text>
         <TextInput
-          className="w-full py-4 px-4 rounded-xl"
-          style={{ backgroundColor: '#12121A', borderWidth: 1, borderColor: fieldErrors.email ? '#FF5050' : '#2A2A3E', color: '#fff', fontSize: 15 }}
+          style={{ width: '100%', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 12, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: fieldErrors.email ? colors.danger : colors.borderStrong, color: colors.text, fontSize: 15 }}
           placeholder="tu@correo.com"
-          placeholderTextColor="#444"
+          placeholderTextColor={colors.textSubtle}
           value={email}
           onChangeText={(v) => { setEmail(v); setFieldErrors(p => ({ ...p, email: '' })); }}
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        {fieldErrors.email ? (
-          <Text className="mt-1 mb-3 ml-1" style={{ color: '#FF5050', fontSize: 12 }}>{fieldErrors.email}</Text>
-        ) : <View className="mb-4" />}
+        {fieldErrors.email
+          ? <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4, marginBottom: 12, marginLeft: 4 }}>{fieldErrors.email}</Text>
+          : <View style={{ marginBottom: 16 }} />
+        }
 
-        {/* Campo Contraseña */}
-        <Text className="text-white mb-2 ml-1" style={{ fontSize: 13 }}>Contraseña</Text>
+        {/* Contraseña */}
+        <Text style={{ color: colors.text, fontSize: 13, marginBottom: 8, marginLeft: 4 }}>Contraseña</Text>
         <View style={{ position: 'relative' }}>
           <TextInput
-            className="w-full py-4 px-4 rounded-xl"
-            style={{ backgroundColor: '#12121A', borderWidth: 1, borderColor: fieldErrors.password ? '#FF5050' : '#2A2A3E', color: '#fff', fontSize: 15, paddingRight: 48 }}
+            style={{ width: '100%', paddingVertical: 16, paddingHorizontal: 16, paddingRight: 48, borderRadius: 12, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: fieldErrors.password ? colors.danger : colors.borderStrong, color: colors.text, fontSize: 15 }}
             placeholder="Mínimo 6 caracteres"
-            placeholderTextColor="#444"
+            placeholderTextColor={colors.textSubtle}
             value={password}
             onChangeText={(v) => { setPassword(v); setFieldErrors(p => ({ ...p, password: '' })); }}
             secureTextEntry={!showPassword}
@@ -186,35 +157,32 @@ export default function RegisterScreen() {
             onPress={() => setShowPassword(p => !p)}
             activeOpacity={0.7}
           >
-            {showPassword
-              ? <EyeOff size={20} color="#666" strokeWidth={1.5} />
-              : <Eye size={20} color="#666" strokeWidth={1.5} />
-            }
+            {showPassword ? <EyeOff size={20} color={colors.textMuted} strokeWidth={1.5} /> : <Eye size={20} color={colors.textMuted} strokeWidth={1.5} />}
           </TouchableOpacity>
         </View>
         {password.length > 0 && (() => {
           const strength = getPasswordStrength(password);
           return (
-            <View className="mt-2 mb-1">
-              <View className="w-full h-1 rounded-full" style={{ backgroundColor: '#2A2A3E' }}>
-                <View className="h-1 rounded-full" style={{ width: strength?.width as any, backgroundColor: strength?.color }} />
+            <View style={{ marginTop: 8, marginBottom: 4 }}>
+              <View style={{ width: '100%', height: 4, borderRadius: 2, backgroundColor: colors.borderStrong }}>
+                <View style={{ height: 4, borderRadius: 2, width: strength?.width as any, backgroundColor: strength?.color }} />
               </View>
-              <Text className="mt-1 ml-1" style={{ color: strength?.color, fontSize: 12 }}>{strength?.label}</Text>
+              <Text style={{ color: strength?.color, fontSize: 12, marginTop: 4, marginLeft: 4 }}>{strength?.label}</Text>
             </View>
           );
         })()}
-        {fieldErrors.password ? (
-          <Text className="mt-1 mb-3 ml-1" style={{ color: '#FF5050', fontSize: 12 }}>{fieldErrors.password}</Text>
-        ) : <View className="mb-4" />}
+        {fieldErrors.password
+          ? <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4, marginBottom: 12, marginLeft: 4 }}>{fieldErrors.password}</Text>
+          : <View style={{ marginBottom: 16 }} />
+        }
 
-        {/* Confirmar Contraseña */}
-        <Text className="text-white mb-2 ml-1" style={{ fontSize: 13 }}>Confirmar contraseña</Text>
+        {/* Confirmar contraseña */}
+        <Text style={{ color: colors.text, fontSize: 13, marginBottom: 8, marginLeft: 4 }}>Confirmar contraseña</Text>
         <View style={{ position: 'relative' }}>
           <TextInput
-            className="w-full py-4 px-4 rounded-xl"
-            style={{ backgroundColor: '#12121A', borderWidth: 1, borderColor: fieldErrors.confirmPassword ? '#FF5050' : '#2A2A3E', color: '#fff', fontSize: 15, paddingRight: 48 }}
+            style={{ width: '100%', paddingVertical: 16, paddingHorizontal: 16, paddingRight: 48, borderRadius: 12, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: fieldErrors.confirmPassword ? colors.danger : colors.borderStrong, color: colors.text, fontSize: 15 }}
             placeholder="Repite tu contraseña"
-            placeholderTextColor="#444"
+            placeholderTextColor={colors.textSubtle}
             value={confirmPassword}
             onChangeText={(v) => { setConfirmPassword(v); setFieldErrors(p => ({ ...p, confirmPassword: '' })); }}
             secureTextEntry={!showConfirmPassword}
@@ -224,35 +192,32 @@ export default function RegisterScreen() {
             onPress={() => setShowConfirmPassword(p => !p)}
             activeOpacity={0.7}
           >
-            {showConfirmPassword
-              ? <EyeOff size={20} color="#666" strokeWidth={1.5} />
-              : <Eye size={20} color="#666" strokeWidth={1.5} />
-            }
+            {showConfirmPassword ? <EyeOff size={20} color={colors.textMuted} strokeWidth={1.5} /> : <Eye size={20} color={colors.textMuted} strokeWidth={1.5} />}
           </TouchableOpacity>
         </View>
-        {fieldErrors.confirmPassword ? (
-          <Text className="mt-1 mb-3 ml-1" style={{ color: '#FF5050', fontSize: 12 }}>{fieldErrors.confirmPassword}</Text>
-        ) : <View className="mb-6" />}
+        {fieldErrors.confirmPassword
+          ? <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4, marginBottom: 12, marginLeft: 4 }}>{fieldErrors.confirmPassword}</Text>
+          : <View style={{ marginBottom: 24 }} />
+        }
 
-        {/* Botón Crear cuenta */}
+        {/* Botón crear cuenta */}
         <TouchableOpacity
-          className="w-full py-4 rounded-xl items-center mb-4"
-          style={{ backgroundColor: '#D4AF37', opacity: loading ? 0.7 : 1 }}
+          style={{ width: '100%', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16, backgroundColor: colors.gold, opacity: loading ? 0.7 : 1 }}
           activeOpacity={0.8}
           onPress={handleRegister}
           disabled={loading}
         >
           {loading
             ? <ActivityIndicator color="#0A0A0F" />
-            : <Text className="font-bold" style={{ color: '#0A0A0F', fontSize: 15 }}>Crear cuenta</Text>
+            : <Text style={{ fontWeight: 'bold', color: '#0A0A0F', fontSize: 15 }}>Crear cuenta</Text>
           }
         </TouchableOpacity>
 
         {/* Ya tengo cuenta */}
-        <View className="flex-row justify-center items-center mt-2">
-          <Text style={{ color: '#666', fontSize: 14 }}>¿Ya tienes cuenta? </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8 }}>
+          <Text style={{ color: colors.textMuted, fontSize: 14 }}>¿Ya tienes cuenta? </Text>
           <TouchableOpacity onPress={() => router.replace('/login')} activeOpacity={0.7}>
-            <Text style={{ color: '#D4AF37', fontSize: 14, fontWeight: '600' }}>Iniciar sesión</Text>
+            <Text style={{ color: colors.gold, fontSize: 14, fontWeight: '600' }}>Iniciar sesión</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

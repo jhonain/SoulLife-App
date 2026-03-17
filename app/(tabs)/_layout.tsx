@@ -1,23 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Heart, Home, Compass, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  
-  // Si insets.bottom > 0, el celular usa gestos (sin botones físicos)
-  // Si insets.bottom === 0, tiene botones físicos
+  const { colors } = useAppTheme();
+
   const hasGestureNav = insets.bottom > 0;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#666666',
+        tabBarActiveTintColor: colors.gold,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: '#0A0A0F',
-          borderTopColor: '#1A1A2E',
+          backgroundColor: colors.tabBg,
+          borderTopColor: colors.border,
           height: hasGestureNav ? 70 + insets.bottom : 70,
           paddingBottom: hasGestureNav ? insets.bottom : 15,
           paddingTop: 15,

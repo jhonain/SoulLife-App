@@ -5,15 +5,26 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, LogOut, LogIn, UserPlus } from 'lucide-react-native';
+import { User, LogOut, LogIn, UserPlus, Sun, Moon, Smartphone } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProfileViewModel } from '../viewmodels/useProfileViewModel';
+import { useAppTheme } from '../context/ThemeContext';
+
+type ThemeMode = 'light' | 'dark' | 'system';
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: any }[] = [
+  { mode: 'light', label: 'Claro', icon: Sun },
+  { mode: 'dark', label: 'Oscuro', icon: Moon },
+  { mode: 'system', label: 'Automático', icon: Smartphone },
+];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, themeMode, setThemeMode } = useAppTheme();
   const { user, loading, isLoggedIn, handleSignOut } = useProfileViewModel();
 
   const confirmSignOut = () => {
@@ -29,115 +40,143 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-[#0A0A0F]">
-        <ActivityIndicator size="large" color="#D4AF37" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
 
-  // Usuario NO logueado
+  // Bloque de selector de tema (compartido entre logueado y no logueado)
+  const ThemeSelector = () => (
+    <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
+      <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12, textTransform: 'uppercase' }}>
+        Apariencia
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {THEME_OPTIONS.map(({ mode, label, icon: Icon }) => {
+          const isSelected = themeMode === mode;
+          return (
+            <TouchableOpacity
+              key={mode}
+              onPress={() => setThemeMode(mode)}
+              activeOpacity={0.7}
+              style={{
+                flex: 1,
+                paddingVertical: 14,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                backgroundColor: isSelected ? colors.goldBg : colors.card,
+                borderWidth: 1,
+                borderColor: isSelected ? colors.gold : colors.borderStrong,
+              }}
+            >
+              <Icon
+                size={20}
+                color={isSelected ? colors.gold : colors.textMuted}
+                strokeWidth={1.5}
+              />
+              <Text style={{ fontSize: 12, fontWeight: isSelected ? '700' : '400', color: isSelected ? colors.gold : colors.textMuted }}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+
   if (!isLoggedIn) {
     return (
-      <View
-        className="flex-1 bg-[#0A0A0F] justify-center items-center px-8"
-        style={{ paddingTop: insets.top }}
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.background }}
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Ícono */}
-        <View
-          className="w-24 h-24 rounded-full items-center justify-center mb-6"
-          style={{ backgroundColor: 'rgba(212,175,55,0.1)' }}
-        >
-          <User size={48} color="#D4AF37" strokeWidth={1.5} />
+        <View style={{ justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingTop: 60 }}>
+          <View style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 24, backgroundColor: colors.goldBgLight }}>
+            <User size={48} color={colors.gold} strokeWidth={1.5} />
+          </View>
+          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 24, textAlign: 'center', marginBottom: 8 }}>
+            Únete a Soul-Life
+          </Text>
+          <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 40, lineHeight: 22 }}>
+            Crea una cuenta para guardar tus frases favoritas y personalizar tu experiencia.
+          </Text>
+          <TouchableOpacity
+            style={{ width: '100%', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12, flexDirection: 'row', justifyContent: 'center', gap: 8, backgroundColor: colors.gold }}
+            activeOpacity={0.8}
+            onPress={() => router.push('/register' as any)}
+          >
+            <UserPlus size={18} color="#0A0A0F" strokeWidth={2} />
+            <Text style={{ fontWeight: 'bold', color: '#0A0A0F', fontSize: 15 }}>Crear cuenta gratis</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ width: '100%', paddingVertical: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: colors.borderStrong }}
+            activeOpacity={0.8}
+            onPress={() => router.push('/login' as any)}
+          >
+            <LogIn size={18} color={colors.gold} strokeWidth={1.5} />
+            <Text style={{ color: colors.gold, fontSize: 15 }}>Ya tengo cuenta</Text>
+          </TouchableOpacity>
         </View>
 
-        <Text className="text-white font-bold text-2xl text-center mb-2">
-          Únete a Soul-Life
-        </Text>
-        <Text className="text-center mb-10" style={{ color: '#666', lineHeight: 22 }}>
-          Crea una cuenta para guardar tus frases favoritas y personalizar tu experiencia.
-        </Text>
+        {/* Separador */}
+        <View style={{ marginHorizontal: 24, height: 1, backgroundColor: colors.border, marginTop: 40 }} />
 
-        {/* Botón Registro */}
-        <TouchableOpacity
-          className="w-full py-4 rounded-xl items-center mb-3 flex-row justify-center gap-2"
-          style={{ backgroundColor: '#D4AF37' }}
-          activeOpacity={0.8}
-          onPress={() => router.push('/register' as any)}
-        >
-          <UserPlus size={18} color="#0A0A0F" strokeWidth={2} />
-          <Text className="font-bold" style={{ color: '#0A0A0F', fontSize: 15 }}>
-            Crear cuenta gratis
-          </Text>
-        </TouchableOpacity>
-
-        {/* Botón Login */}
-        <TouchableOpacity
-          className="w-full py-4 rounded-xl items-center flex-row justify-center gap-2"
-          style={{ backgroundColor: 'transparent', borderWidth: 1, borderColor: '#2A2A3E' }}
-          activeOpacity={0.8}
-          onPress={() => router.push('/login' as any)}
-        >
-          <LogIn size={18} color="#D4AF37" strokeWidth={1.5} />
-          <Text style={{ color: '#D4AF37', fontSize: 15 }}>
-            Ya tengo cuenta
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* Selector de tema también visible sin cuenta */}
+        <ThemeSelector />
+      </ScrollView>
     );
   }
 
-  // Usuario logueado
   return (
-    <View
-      className="flex-1 bg-[#0A0A0F]"
-      style={{ paddingTop: insets.top }}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
     >
       {/* Header perfil */}
-      <View className="items-center px-8 py-10">
-        {/* Avatar */}
+      <View style={{ alignItems: 'center', paddingHorizontal: 32, paddingVertical: 40 }}>
         {user?.avatar_url ? (
           <Image
             source={{ uri: user.avatar_url }}
-            className="w-24 h-24 rounded-full mb-4"
-            style={{ borderWidth: 2, borderColor: '#D4AF37' }}
+            style={{ width: 96, height: 96, borderRadius: 48, marginBottom: 16, borderWidth: 2, borderColor: colors.gold }}
           />
         ) : (
-          <View
-            className="w-24 h-24 rounded-full items-center justify-center mb-4"
-            style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderWidth: 2, borderColor: '#D4AF37' }}
-          >
-            <User size={40} color="#D4AF37" strokeWidth={1.5} />
+          <View style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: colors.goldBg, borderWidth: 2, borderColor: colors.gold }}>
+            <User size={40} color={colors.gold} strokeWidth={1.5} />
           </View>
         )}
-
-        {/* Nombre */}
-        <Text className="text-white font-bold text-2xl text-center">
+        <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 24, textAlign: 'center' }}>
           {user?.full_name ?? 'Usuario'}
         </Text>
-
-        {/* Email */}
-        <Text className="mt-1 text-center" style={{ color: '#666', fontSize: 14 }}>
+        <Text style={{ color: colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' }}>
           {user?.email}
         </Text>
       </View>
 
       {/* Separador */}
-      <View className="mx-6 h-px" style={{ backgroundColor: '#1A1A2E' }} />
+      <View style={{ marginHorizontal: 24, height: 1, backgroundColor: colors.border }} />
+
+      {/* Selector de tema */}
+      <ThemeSelector />
+
+      {/* Separador */}
+      <View style={{ marginHorizontal: 24, height: 1, backgroundColor: colors.border, marginTop: 24 }} />
 
       {/* Botón cerrar sesión */}
-      <View className="px-6 mt-8">
+      <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
         <TouchableOpacity
-          className="w-full py-4 rounded-xl flex-row items-center justify-center gap-2"
-          style={{ backgroundColor: 'rgba(255,80,80,0.1)', borderWidth: 1, borderColor: 'rgba(255,80,80,0.2)' }}
+          style={{ width: '100%', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.dangerBg, borderWidth: 1, borderColor: colors.dangerBorder }}
           activeOpacity={0.8}
           onPress={confirmSignOut}
         >
-          <LogOut size={18} color="#FF5050" strokeWidth={1.5} />
-          <Text style={{ color: '#FF5050', fontSize: 15, fontWeight: '600' }}>
-            Cerrar sesión
-          </Text>
+          <LogOut size={18} color={colors.danger} strokeWidth={1.5} />
+          <Text style={{ color: colors.danger, fontSize: 15, fontWeight: '600' }}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }

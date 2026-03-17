@@ -1,6 +1,11 @@
+// useFavoritesViewModel.ts
+// ViewModel de la pantalla Favoritos
+// [MODIFICADO] - Usa FavoritesContext para sincronizar corazones con HomeScreen en tiempo real
+
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { favoritoService } from '../services/favoritoService';
+import { useFavoritesContext } from '../context/FavoritesContext';
 
 export interface FraseFavorita {
   id: string;
@@ -18,6 +23,9 @@ export function useFavoritesViewModel() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todos');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Contexto global para sincronizar corazones con HomeScreen
+  const { removeFavorite: removeFavoriteFromContext } = useFavoritesContext();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -111,7 +119,13 @@ export function useFavoritesViewModel() {
     const userId = userData.user?.id;
     if (!userId) return;
 
+    // Actualizar lista local de esta pantalla
     setFavorites((prev) => prev.filter((f) => f.id !== favoritoId));
+
+    // Actualizar contexto global → desmarca corazón en HomeScreen inmediatamente
+    removeFavoriteFromContext(fraseId);
+
+    // Eliminar de Supabase
     await favoritoService.eliminarFavorito(userId, fraseId);
   };
 

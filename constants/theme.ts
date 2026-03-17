@@ -1,41 +1,75 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export const AppColors = {
+  dark: {
+    background: '#0A0A0F',
+    card: '#12121A',
+    border: '#1A1A2E',
+    borderStrong: '#2A2A3E',
+    text: '#FFFFFF',
+    textMuted: '#666666',
+    textSubtle: '#444444',
+    gold: '#D4AF37',
+    goldBg: 'rgba(212,175,55,0.15)',
+    goldBgLight: 'rgba(212,175,55,0.1)',
+    inputBg: '#12121A',
+    tabBg: '#0A0A0F',
+    danger: '#FF5050',
+    dangerBg: 'rgba(255,80,80,0.1)',
+    dangerBorder: 'rgba(255,80,80,0.2)',
+    separatorBg: '#1A1A2E',
+    overlay: 'rgba(0,0,0,0.75)',
+    googleBtn: '#1A1A2E',
+  },
+  light: {
+    background: '#F5F5F0',
+    card: '#FFFFFF',
+    border: '#E5E5E0',
+    borderStrong: '#D0D0CC',
+    text: '#0A0A0F',
+    textMuted: '#888888',
+    textSubtle: '#AAAAAA',
+    gold: '#B8960C',
+    goldBg: 'rgba(184,150,12,0.15)',
+    goldBgLight: 'rgba(184,150,12,0.1)',
+    inputBg: '#EBEBEB',
+    tabBg: '#FFFFFF',
+    danger: '#FF5050',
+    dangerBg: 'rgba(255,80,80,0.1)',
+    dangerBorder: 'rgba(255,80,80,0.2)',
+    separatorBg: '#E5E5E0',
+    overlay: 'rgba(0,0,0,0.6)',
+    googleBtn: '#EBEBEB',
+  },
+};
 
+export type AppColorScheme = typeof AppColors.dark;
+
+// Colores legacy para compatibilidad con hooks existentes
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#0A0A0F',
+    background: '#F5F5F0',
+    tint: '#B8960C',
+    icon: '#888888',
+    tabIconDefault: '#888888',
+    tabIconSelected: '#B8960C',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#FFFFFF',
+    background: '#0A0A0F',
+    tint: '#D4AF37',
+    icon: '#666666',
+    tabIconDefault: '#666666',
+    tabIconSelected: '#D4AF37',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
