@@ -118,26 +118,15 @@ async function insertarFrase(autor, categoriaId, imageUrl, textoEs, textoEn) {
 
 // ─── Supabase: Verificar duplicado ───────────────────────────
 
-async function fraseYaExiste(textoEs, autor) {
-  // Verificar por texto exacto
-  const { data: porTexto } = await supabase
+async function fraseYaExiste(textoEs) {
+  const { data } = await supabase
     .from('frases_traduccion')
     .select('id')
     .eq('language', 'es')
     .ilike('contenido', textoEs.trim())
     .maybeSingle();
 
-  if (porTexto) return true;
-
-  // Verificar por autor — si el autor ya tiene más de 3 frases, evitar repetir
-  const { data: porAutor } = await supabase
-    .from('frases')
-    .select('id')
-    .ilike('autor', autor.trim());
-
-  if (porAutor && porAutor.length >= 3) return true;
-
-  return false;
+  return data !== null;
 }
 
 // ─── Main ─────────────────────────────────────────────────────
@@ -157,7 +146,7 @@ async function main() {
       const frase = await generarFrase(categoria.slug);
 
       // Verificar si ya existe en Supabase
-      const existe = await fraseYaExiste(frase.es, frase.autor);
+      const existe = await fraseYaExiste(frase.es);
       if (existe) {
         console.log(`   ⚠️  Frase duplicada, saltando...\n`);
         fallidas++;
