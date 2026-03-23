@@ -1,3 +1,7 @@
+// useProfileViewModel.ts
+// ViewModel de la pantalla de perfil
+// [MODIFICADO] - Agregado isAdmin para detectar rol de administrador desde app_metadata
+
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../models/User';
@@ -6,6 +10,7 @@ export function useProfileViewModel() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     checkSession();
@@ -13,6 +18,7 @@ export function useProfileViewModel() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setIsLoggedIn(true);
+        setIsAdmin(session.user.app_metadata?.role === 'admin');
         setUser({
           id: session.user.id,
           email: session.user.email ?? '',
@@ -21,6 +27,7 @@ export function useProfileViewModel() {
         });
       } else {
         setIsLoggedIn(false);
+        setIsAdmin(false);
         setUser(null);
       }
       setLoading(false);
@@ -33,6 +40,7 @@ export function useProfileViewModel() {
     const { data } = await supabase.auth.getUser();
     if (data.user && !data.user.is_anonymous) {
       setIsLoggedIn(true);
+      setIsAdmin(data.user.app_metadata?.role === 'admin');
       setUser({
         id: data.user.id,
         email: data.user.email ?? '',
@@ -41,6 +49,7 @@ export function useProfileViewModel() {
       });
     } else {
       setIsLoggedIn(false);
+      setIsAdmin(false);
     }
     setLoading(false);
   };
@@ -49,12 +58,14 @@ export function useProfileViewModel() {
     await supabase.auth.signOut();
     setUser(null);
     setIsLoggedIn(false);
+    setIsAdmin(false);
   };
 
   return {
     user,
     loading,
     isLoggedIn,
+    isAdmin,
     handleSignOut,
   };
 }

@@ -12,7 +12,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Heart, Share2, Trash2, LogIn, UserPlus, Quote, Tag } from 'lucide-react-native';
-import { useFavoritesViewModel, FraseFavorita } from '../viewmodels/useFavoritesViewModel';
+import { useFavoritesViewModel } from '../viewmodels/useFavoritesViewModel';
+import { FraseFavorita } from '../models/Frase';
 import { useAppTheme } from '../context/ThemeContext';
 
 export default function FavoriteScreen() {
@@ -127,14 +128,6 @@ export default function FavoriteScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-      {/* Header */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 26 }}>Mis Favoritos</Text>
-        <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>
-          {totalFavorites} {totalFavorites === 1 ? 'guardado' : 'guardados'}
-        </Text>
-      </View>
-
       {/* Filtros de categoría */}
       {categorias.length > 1 && (
         <View style={{ height: 44, marginBottom: 4 }}>
@@ -182,7 +175,7 @@ export default function FavoriteScreen() {
       ) : (
         <FlatList
           data={favorites}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.frase_id}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20, paddingTop: 4 }}

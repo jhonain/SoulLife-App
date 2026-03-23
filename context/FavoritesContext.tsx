@@ -2,10 +2,14 @@
 // Contexto global para compartir el estado de favoritos entre HomeScreen y FavoriteScreen
 // [CREADO] - Permite que al eliminar un favorito en FavoriteScreen
 //            el corazón se desmarca en tiempo real en HomeScreen
+// [MODIFICADO] - Agregado registerOnFavoriteAdded para notificar a FavoriteScreen
+//                cuando se agrega un favorito desde HomeScreen en tiempo real
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { favoritoService } from '../services/favoritoService';
+
+type OnFavoriteAddedCallback = (fraseId: string) => void;
 
 interface FavoritesContextType {
   favorites: Set<string>;
@@ -13,6 +17,8 @@ interface FavoritesContextType {
   removeFavorite: (fraseId: string) => void;
   loadFavorites: (userId: string) => Promise<void>;
   clearFavorites: () => void;
+  registerOnFavoriteAdded: (cb: OnFavoriteAddedCallback) => void;
+  unregisterOnFavoriteAdded: () => void;
 }
 
 const FavoritesContext = createContext<FavoritesContextType>({
@@ -21,13 +27,17 @@ const FavoritesContext = createContext<FavoritesContextType>({
   removeFavorite: () => {},
   loadFavorites: async () => {},
   clearFavorites: () => {},
+  registerOnFavoriteAdded: () => {},
+  unregisterOnFavoriteAdded: () => {},
 });
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
+  // Callback que useFavoritesViewModel registra para recibir notificaciones
+  const onFavoriteAddedRef = useRef<OnFavoriteAddedCallback | null>(null);
+
   useEffect(() => {
-    // Cargar favoritos al iniciar si hay sesión
     supabase.auth.getSession().then(({ data }) => {
       const session = data.session;
       if (session?.user && !session.user.is_anonymous) {
@@ -35,7 +45,6 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Escuchar cambios de sesión
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user && !session.user.is_anonymous) {
         loadFavorites(session.user.id);
@@ -58,6 +67,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
   const addFavorite = (fraseId: string) => {
     setFavorites((prev) => new Set([...prev, fraseId]));
+    // Notificar a useFavoritesViewModel para que cargue los datos completos
+    if (onFavoriteAddedRef.current) {
+      onFavoriteAddedRef.current(fraseId);
+    }
   };
 
   const removeFavorite = (fraseId: string) => {
@@ -70,8 +83,25 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
   const clearFavorites = () => setFavorites(new Set());
 
+  // Registro del callback desde useFavoritesViewModel
+  const registerOnFavoriteAdded = (cb: OnFavoriteAddedCallback) => {
+    onFavoriteAddedRef.current = cb;
+  };
+
+  const unregisterOnFavoriteAdded = () => {
+    onFavoriteAddedRef.current = null;
+  };
+
   return (
-    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite, loadFavorites, clearFavorites }}>
+    <FavoritesContext.Provider value={{
+      favorites,
+      addFavorite,
+      removeFavorite,
+      loadFavorites,
+      clearFavorites,
+      registerOnFavoriteAdded,
+      unregisterOnFavoriteAdded,
+    }}>
       {children}
     </FavoritesContext.Provider>
   );

@@ -1,31 +1,39 @@
 // useFavoritesViewModel.ts
 // ViewModel de la pantalla Favoritos
 // [MODIFICADO] - Usa FavoritesContext para sincronizar corazones con HomeScreen en tiempo real
+// [MODIFICADO] - Registra callback en FavoritesContext para agregar favoritos
+//                en tiempo real cuando se marcan desde HomeScreen sin recargar
+// [MODIFICADO] - Fix eliminación: usa frase_id para filtrar correctamente el estado
+// [MODIFICADO] - Agregado useEffect para sincronizar lista cuando se desmarca desde Home
+// [MODIFICADO] - Queries movidas a favoritoService — ViewModel solo maneja estado
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { favoritoService } from '../services/favoritoService';
 import { useFavoritesContext } from '../context/FavoritesContext';
-
-export interface FraseFavorita {
-  id: string;
-  frase_id: string;
-  autor: string;
-  texto: string;
-  image_url: string;
-  categoria: string;
-}
+import { FraseFavorita } from '../models/Frase';
 
 export function useFavoritesViewModel() {
-  const [favorites, setFavorites] = useState<FraseFavorita[]>([]);
+  const [allFavorites, setAllFavorites] = useState<FraseFavorita[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todos');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Contexto global para sincronizar corazones con HomeScreen
-  const { removeFavorite: removeFavoriteFromContext } = useFavoritesContext();
+  const {
+    favorites: favoritesIds,
+    removeFavorite: removeFavoriteFromContext,
+    registerOnFavoriteAdded,
+    unregisterOnFavoriteAdded,
+  } = useFavoritesContext();
+
+  // Sincronizar lista cuando el contexto cambia
+  // Si se desmarca desde Home → el ID desaparece del Set → se elimina de la lista
+  useEffect(() => {
+    if (favoritesIds.size === 0 && allFavorites.length === 0) return;
+    setAllFavorites((prev) => prev.filter((f) => favoritesIds.has(f.frase_id)));
+  }, [favoritesIds]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -48,58 +56,28 @@ export function useFavoritesViewModel() {
         loadFavorites(session.user.id);
       } else {
         setCurrentUserId(null);
-        setFavorites([]);
+        setAllFavorites([]);
         setLoading(false);
       }
     });
 
-    return () => listener.subscription.unsubscribe();
+    // Registrar callback para agregar favorito en tiempo real desde HomeScreen
+    registerOnFavoriteAdded(async (fraseId: string) => {
+      await agregarFavoritoEnTiempoReal(fraseId);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+      unregisterOnFavoriteAdded();
+    };
   }, []);
 
+  // ─── Carga todos los favoritos completos ─────────────────────
   const loadFavorites = async (userId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('favoritos')
-        .select(`
-          id,
-          frase_id,
-          frases (
-            id,
-            autor,
-            image_url,
-            frases_traduccion (contenido, language),
-            categoria_id,
-            categoria (
-              categoria_traduccion (nombre, language)
-            )
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formatted = data.map((item: any) => {
-        const frase = item.frases;
-        const traduccion =
-          frase.frases_traduccion.find((t: any) => t.language === 'es') ||
-          frase.frases_traduccion[0];
-        const categoriaNombre =
-          frase.categoria?.categoria_traduccion?.find((t: any) => t.language === 'es')?.nombre ||
-          'General';
-
-        return {
-          id: item.id,
-          frase_id: item.frase_id,
-          autor: frase.autor,
-          texto: traduccion?.contenido ?? 'Sin traducción disponible.',
-          image_url: frase.image_url,
-          categoria: categoriaNombre,
-        };
-      });
-
-      setFavorites(formatted);
+      const data = await favoritoService.getFavoritosCompletos(userId);
+      setAllFavorites(data);
     } catch (err) {
       console.error('Error cargando favoritos:', err);
     } finally {
@@ -107,6 +85,26 @@ export function useFavoritesViewModel() {
     }
   };
 
+  // ─── Agrega favorito en tiempo real desde HomeScreen ─────────
+  const agregarFavoritoEnTiempoReal = async (fraseId: string) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) return;
+
+      const nuevaFrase = await favoritoService.getFavoritoByFraseId(userId, fraseId);
+      if (!nuevaFrase) return;
+
+      setAllFavorites((prev) => {
+        if (prev.some((f) => f.frase_id === fraseId)) return prev;
+        return [nuevaFrase, ...prev];
+      });
+    } catch (err) {
+      console.error('Error agregando favorito en tiempo real:', err);
+    }
+  };
+
+  // ─── Refresh manual ──────────────────────────────────────────
   const handleRefresh = async () => {
     if (!currentUserId) return;
     setRefreshing(true);
@@ -114,30 +112,31 @@ export function useFavoritesViewModel() {
     setRefreshing(false);
   };
 
-  const removeFavorite = async (favoritoId: string, fraseId: string) => {
+  // ─── Eliminar favorito ───────────────────────────────────────
+  const removeFavorite = useCallback(async (favoritoId: string, fraseId: string) => {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
     if (!userId) return;
 
-    // Actualizar lista local de esta pantalla
-    setFavorites((prev) => prev.filter((f) => f.id !== favoritoId));
+    // Actualizar estado local inmediatamente
+    setAllFavorites((prev) => prev.filter((f) => f.frase_id !== fraseId));
 
-    // Actualizar contexto global → desmarca corazón en HomeScreen inmediatamente
+    // Desmarcar corazón en HomeScreen
     removeFavoriteFromContext(fraseId);
 
     // Eliminar de Supabase
     await favoritoService.eliminarFavorito(userId, fraseId);
-  };
+  }, [removeFavoriteFromContext]);
 
-  const categorias = ['Todos', ...Array.from(new Set(favorites.map((f) => f.categoria)))];
+  const categorias = ['Todos', ...Array.from(new Set(allFavorites.map((f) => f.categoria)))];
 
   const favoritosFiltrados = categoriaSeleccionada === 'Todos'
-    ? favorites
-    : favorites.filter((f) => f.categoria === categoriaSeleccionada);
+    ? allFavorites
+    : allFavorites.filter((f) => f.categoria === categoriaSeleccionada);
 
   return {
     favorites: favoritosFiltrados,
-    totalFavorites: favorites.length,
+    totalFavorites: allFavorites.length,
     loading,
     refreshing,
     isLoggedIn,

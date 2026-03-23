@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const Groq = require('groq-sdk');
 const { createClient } = require('@supabase/supabase-js');
-const { CATEGORIAS, PEXELS_QUERY, buildPrompt } = require('./promptTemplates.cjs');
+const { CATEGORIAS, getPexelsQuery, buildPrompt } = require('./promptTemplates.cjs');
 
 // ─── Configuración ───────────────────────────────────────────
 const FRASES_A_GENERAR = 5;
@@ -71,7 +71,7 @@ async function generarFrase(categoriaSlug) {
 // ─── Pexels: Buscar imagen ────────────────────────────────────
 
 async function buscarImagen(categoriaSlug) {
-  const query = PEXELS_QUERY[categoriaSlug] ?? 'peaceful nature';
+  const query = getPexelsQuery(categoriaSlug);
   const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=portrait`;
 
   const response = await fetch(url, {
@@ -86,7 +86,7 @@ async function buscarImagen(categoriaSlug) {
   if (!fotos || fotos.length === 0) throw new Error('Pexels no devolvió imágenes');
 
   const foto = fotos[Math.floor(Math.random() * fotos.length)];
-  return foto.src.large2x ?? foto.src.large;
+  return foto.src.large ?? foto.src.medium;
 }
 
 // ─── Supabase: Insertar frase ────────────────────────────────

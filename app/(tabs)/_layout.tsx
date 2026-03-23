@@ -33,14 +33,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="Favorite"
         options={{
           title: 'Favoritos',
           tabBarIcon: ({ color }) => <Heart size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="Explore"
         options={{
           title: 'Explorar',
           tabBarIcon: ({ color }) => <Compass size={24} color={color} />,

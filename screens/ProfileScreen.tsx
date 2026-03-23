@@ -1,3 +1,8 @@
+// ProfileScreen.tsx
+// Pantalla de perfil del usuario
+// [MODIFICADO] - Agregado isAdmin y botón de Panel Admin para administradores
+// [MODIFICADO] - Importado Shield para ícono del panel admin
+
 import {
   View,
   Text,
@@ -8,7 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, LogOut, LogIn, UserPlus, Sun, Moon, Smartphone } from 'lucide-react-native';
+import { User, LogOut, LogIn, UserPlus, Sun, Moon, Smartphone, Shield } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProfileViewModel } from '../viewmodels/useProfileViewModel';
 import { useAppTheme } from '../context/ThemeContext';
@@ -25,7 +30,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, themeMode, setThemeMode } = useAppTheme();
-  const { user, loading, isLoggedIn, handleSignOut } = useProfileViewModel();
+  const { user, loading, isLoggedIn, isAdmin, handleSignOut } = useProfileViewModel();
 
   const confirmSignOut = () => {
     Alert.alert(
@@ -46,7 +51,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // Bloque de selector de tema (compartido entre logueado y no logueado)
   const ThemeSelector = () => (
     <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
       <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12, textTransform: 'uppercase' }}>
@@ -72,11 +76,7 @@ export default function ProfileScreen() {
                 borderColor: isSelected ? colors.gold : colors.borderStrong,
               }}
             >
-              <Icon
-                size={20}
-                color={isSelected ? colors.gold : colors.textMuted}
-                strokeWidth={1.5}
-              />
+              <Icon size={20} color={isSelected ? colors.gold : colors.textMuted} strokeWidth={1.5} />
               <Text style={{ fontSize: 12, fontWeight: isSelected ? '700' : '400', color: isSelected ? colors.gold : colors.textMuted }}>
                 {label}
               </Text>
@@ -122,10 +122,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Separador */}
         <View style={{ marginHorizontal: 24, height: 1, backgroundColor: colors.border, marginTop: 40 }} />
-
-        {/* Selector de tema también visible sin cuenta */}
         <ThemeSelector />
       </ScrollView>
     );
@@ -162,6 +159,26 @@ export default function ProfileScreen() {
 
       {/* Selector de tema */}
       <ThemeSelector />
+
+      {/* Panel Admin — solo visible para administradores */}
+      {isAdmin && (
+        <>
+          <View style={{ marginHorizontal: 24, height: 1, backgroundColor: colors.border, marginTop: 24 }} />
+          <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
+            <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12, textTransform: 'uppercase' }}>
+              Administración
+            </Text>
+            <TouchableOpacity
+              style={{ width: '100%', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.goldBg, borderWidth: 1, borderColor: colors.gold }}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/Profile/Admin' as any)}
+            >
+              <Shield size={18} color={colors.gold} strokeWidth={1.5} />
+              <Text style={{ color: colors.gold, fontSize: 15, fontWeight: '600' }}>Panel de Admin</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       {/* Separador */}
       <View style={{ marginHorizontal: 24, height: 1, backgroundColor: colors.border, marginTop: 24 }} />
