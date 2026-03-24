@@ -22,11 +22,20 @@ import {
 import { useAppTheme } from '../context/ThemeContext';
 import { useAdminViewModel } from '../viewmodels/useAdminViewModel';
 import { FraseAdmin } from '../services/adminService';
+import { supabase } from '@/lib/supabase';
+import { useEffect } from 'react';
 
 export default function AdminScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      console.log('app_metadata:', JSON.stringify(data.session?.user?.app_metadata));
+    });
+  }, []);
+
   const {
     stats,
     frases,
@@ -63,6 +72,7 @@ export default function AdminScreen() {
       <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: 'center' }}>{label}</Text>
     </View>
   );
+
 
   const renderFrase = ({ item }: { item: FraseAdmin }) => (
     <View style={{

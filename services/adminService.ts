@@ -87,6 +87,7 @@ export const adminService = {
       .update({ is_active: isActive })
       .eq('id', fraseId);
 
+    console.log('toggle result:', { fraseId, isActive, error });
     if (error) throw error;
   },
 

@@ -1,7 +1,8 @@
 // generateFrases.cjs
-// Script principal para generar frases con Groq (llama) + imágenes de Pexels
+// Script principal para generar frases con Groq (llama) + imágenes de Pexels/Unsplash
 // e insertarlas automáticamente en Supabase
 // [MODIFICADO] - Cambiado de Gemini a Groq (llama-3.3-70b-versatile)
+// [MODIFICADO] - Integrado Unsplash junto a Pexels — 50/50 aleatorio para más variedad
 
 require('dotenv').config();
 
@@ -15,7 +16,7 @@ const DELAY_MS = 1500;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY // service_role key — bypasea RLS
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -53,7 +54,6 @@ async function generarFrase(categoriaSlug) {
 
   const text = completion.choices[0]?.message?.content?.trim() ?? '';
 
-  // Limpiar posibles bloques markdown
   const clean = text
     .replace(/```json/g, '')
     .replace(/```/g, '')
@@ -70,8 +70,7 @@ async function generarFrase(categoriaSlug) {
 
 // ─── Pexels: Buscar imagen ────────────────────────────────────
 
-async function buscarImagen(categoriaSlug) {
-  const query = getPexelsQuery(categoriaSlug);
+async function buscarImagenPexels(query) {
   const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=portrait`;
 
   const response = await fetch(url, {
@@ -89,10 +88,60 @@ async function buscarImagen(categoriaSlug) {
   return foto.src.large ?? foto.src.medium;
 }
 
+// ─── Unsplash: Buscar imagen ──────────────────────────────────
+
+async function buscarImagenUnsplash(query) {
+  const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=15&orientation=portrait`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` },
+  });
+
+  if (!response.ok) throw new Error(`Unsplash error: ${response.status}`);
+
+  const data = await response.json();
+  const fotos = data.results;
+
+  if (!fotos || fotos.length === 0) throw new Error('Unsplash no devolvió imágenes');
+
+  const foto = fotos[Math.floor(Math.random() * fotos.length)];
+  return foto.urls.regular;
+}
+
+// ─── Imagen: 50/50 Pexels o Unsplash con fallback ────────────
+
+async function buscarImagen(categoriaSlug) {
+  const query = getPexelsQuery(categoriaSlug);
+  const usarPexels = Math.random() < 0.5;
+
+  try {
+    if (usarPexels) {
+      const url = await buscarImagenPexels(query);
+      console.log(`   🖼️  Imagen obtenida de Pexels`);
+      return url;
+    } else {
+      const url = await buscarImagenUnsplash(query);
+      console.log(`   🖼️  Imagen obtenida de Unsplash`);
+      return url;
+    }
+  } catch (err) {
+    // Si falla uno intenta con el otro
+    console.log(`   ⚠️  Fallback a ${usarPexels ? 'Unsplash' : 'Pexels'}`);
+    if (usarPexels) {
+      const url = await buscarImagenUnsplash(query);
+      console.log(`   🖼️  Imagen obtenida de Unsplash (fallback)`);
+      return url;
+    } else {
+      const url = await buscarImagenPexels(query);
+      console.log(`   🖼️  Imagen obtenida de Pexels (fallback)`);
+      return url;
+    }
+  }
+}
+
 // ─── Supabase: Insertar frase ────────────────────────────────
 
 async function insertarFrase(autor, categoriaId, imageUrl, textoEs, textoEn) {
-  // 1. Insertar en frases
   const { data: fraseData, error: fraseError } = await supabase
     .from('frases')
     .insert({ autor, categoria_id: categoriaId, image_url: imageUrl, is_active: true })
@@ -103,7 +152,6 @@ async function insertarFrase(autor, categoriaId, imageUrl, textoEs, textoEn) {
 
   const fraseId = fraseData.id;
 
-  // 2. Insertar traducciones ES y EN
   const { error: tradError } = await supabase
     .from('frases_traduccion')
     .insert([
@@ -155,9 +203,8 @@ async function main() {
       console.log(`   ✅ Frase: "${frase.es.substring(0, 50)}..."`);
       console.log(`   👤 Autor: ${frase.autor}`);
 
-      // 2. Buscar imagen en Pexels
+      // 2. Buscar imagen — 50% Pexels, 50% Unsplash
       const imageUrl = await buscarImagen(categoria.slug);
-      console.log(`   🖼️  Imagen obtenida de Pexels`);
 
       // 3. Insertar en Supabase
       const fraseId = await insertarFrase(
